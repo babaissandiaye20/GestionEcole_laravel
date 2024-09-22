@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Http\Controllers;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use Kreait\Firebase\Auth;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Exception\Auth\UserNotFound;
+use Kreait\Firebase\Exception\Auth\InvalidPassword;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Firebase\Auth\Token\Exception\InvalidToken;
+use App\Services\UserFirebaseServiceInterface;
+use Illuminate\Http\Request;
+use App\Exports\UsersExport;
+use App\Imports\UsersImport;
+use Maatwebsite\Excel\Facades\Excel;
+
+class UserFirebaseController extends Controller
+{
+    protected $userService;
+      protected $firebaseAuth;
+
+    public function __construct(UserFirebaseServiceInterface $userService,Auth $firebaseAuth)
+    {
+        $this->userService = $userService;
+          $this->firebaseAuth = $firebaseAuth;
+
+    }
+
+   public function createUser(Request $request)
+   {
+       // Validation des données
+       $validatedData = $request->validate([
+           'nom' => 'required|string',
+           'prenom' => 'required|string',
+           'email' => 'required|email',
+           'password' => 'required|string|min:6',
+           'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',// Ajout de la validation de la photo
+           'telephone'=>'required|string',
+           'fonction'=>'required|string',
+           "statut"=>'required|string',
+       ]);
+
+       // Gestion de la photo uploadée
+       if ($request->hasFile('photo')) {
+           $validatedData['photo'] = $request->file('photo');
+       }
+
+       // Transmission des données au service pour créer l'utilisateur
+       $user = $this->userService->createUser($validatedData);
+       return response()->json($user, 201);
+   }
+
+    public function getUserById($id)
+    {
+        $user = $this->userService->getUserById($id);
+        return response()->json($user);
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $data = $request->all();
+        $user = $this->userService->updateUser($id, $data);
+        return response()->json($user);
+    }
+
+    public function deleteUser($id)
+    {
+        $this->userService->deleteUser($id);
+        return response()->json(['message' => 'User deleted successfully']);
+    }
+
+    public function findUserByField(Request $request)
+    {
+        $field = $request->get('field');
+        $value = $request->get('value');
+        $user = $this->userService->findUserByField($field, $value);
+        return response()->json($user);
+    }
+
+    public function getAllUsers()
+    {
+        $users = $this->userService->getAllUsers();
+         //dd($users);
+        return response()->json($users);
+
+    }
+public function exportUsers()
+{
+    return Excel::download(new UsersExport, 'users.xlsx');
+}
+public function importUsers(Request $request)
+{
+    $validatedData = $request->validate([
+        'file' => 'required|mimes:xlsx,csv',
+    ]);
+
+    // Récupération du fichier uploadé
+    $file = $request->file('file');
+
+    // Utilisation de Maatwebsite Excel pour lire le fichier
+    Excel::import(new UsersImport($this->userService), $file);
+
+    return response()->json(['message' => 'Users imported successfully'], 200);
+}
+ public function authenticateWithCredentials(Request $request)
+    {
+        // Validation des entrées
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            Log::error('Validation échouée', $validator->errors()->toArray());
+            return response()->json($validator->errors(), 422);
+        }
+
+        try {
+            Log::info('Tentative de connexion avec l\'email: ' . $request->input('email'));
+
+            // Authentification via Firebase avec email et mot de passe
+            $signInResult = $this->firebaseAuth->signInWithEmailAndPassword(
+                $request->input('email'),
+                $request->input('password')
+            );
+
+            // Récupérer l'UID de l'utilisateur Firebase
+            $uid = $signInResult->firebaseUserId();
+            Log::info('Utilisateur connecté, Firebase UID: ' . $uid);
+
+            // Informations supplémentaires à inclure dans le token
+            $payload = [
+                'iss' => 'your-app', // Identifiant de l'émetteur
+                'sub' => $uid, // Identifiant de l'utilisateur (UID Firebase)
+                'iat' => time(), // Timestamp actuel
+                'exp' => time() + (60 * 60), // Expiration dans 1 heure
+            ];
+
+            // Clé secrète pour signer le JWT (assurez-vous qu'elle est sécurisée)
+            $secretKey = env('JWT_SECRET', 'your-secret-key');
+
+            // Générer le token JWT
+            $jwt = JWT::encode($payload, $secretKey, 'HS256');
+
+            return response()->json([
+                'message' => 'Authenticated successfully',
+                'token' => $jwt
+            ]);
+
+        } catch (UserNotFound $e) {
+            Log::error('Utilisateur non trouvé pour l\'email: ' . $request->input('email'));
+            return response()->json(['error' => 'User not found'], 404);
+        } catch (InvalidPassword $e) {
+            Log::error('Mot de passe invalide pour l\'email: ' . $request->input('email'));
+            return response()->json(['error' => 'Invalid password'], 401);
+        } catch (Exception $e) {
+            Log::error('Erreur lors de l\'authentification: ' . $e->getMessage());
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+    }
+}
