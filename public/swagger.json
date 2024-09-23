@@ -1,0 +1,627 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Utilisateurs",
+        "description": "API pour la gestion des utilisateurs.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Serveur local"
+        }
+    ],
+    "paths": {
+        "/users": {
+            "post": {
+                "summary": "Create a new user",
+                "tags": ["Users"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "nom": { "type": "string" },
+                                    "prenom": { "type": "string" },
+                                    "email": { "type": "string", "format": "email" },
+                                    "password": { "type": "string", "minLength": 6 },
+                                    "photo": { "type": "string", "format": "binary" },
+                                    "telephone": { "type": "string" },
+                                    "fonction": { "type": "string" },
+                                    "statut": { "type": "string" }
+                                },
+                                "required": ["nom", "prenom", "email", "password", "telephone", "fonction", "statut"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/User" }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "summary": "Retrieve all users",
+                "tags": ["Users"],
+                "responses": {
+                    "200": {
+                        "description": "List of users",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": { "$ref": "#/components/schemas/User" }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "summary": "Get user by ID",
+                "tags": ["Users"],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User data",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/User" }
+                            }
+                        }
+                    },
+                    "404": { "description": "User not found" }
+                }
+            },
+            "put": {
+                "summary": "Update a user by ID",
+                "tags": ["Users"],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "nom": { "type": "string" },
+                                    "prenom": { "type": "string" },
+                                    "email": { "type": "string", "format": "email" },
+                                    "telephone": { "type": "string" },
+                                    "fonction": { "type": "string" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/User" }
+                            }
+                        }
+                    },
+                    "404": { "description": "User not found" }
+                }
+            },
+            "delete": {
+                "summary": "Delete user by ID",
+                "tags": ["Users"],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+                ],
+                "responses": {
+                    "200": { "description": "User deleted successfully" },
+                    "404": { "description": "User not found" }
+                }
+            }
+        },
+        "/users/search": {
+            "get": {
+                "summary": "Search user by field",
+                "tags": ["Users"],
+                "parameters": [
+                    { "name": "field", "in": "query", "required": true, "schema": { "type": "string" } },
+                    { "name": "value", "in": "query", "required": true, "schema": { "type": "string" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User found",
+                        "content": {
+                            "application/json": {
+                                "schema": { "$ref": "#/components/schemas/User" }
+                            }
+                        }
+                    },
+                    "404": { "description": "User not found" }
+                }
+            }
+        },
+        "/export-users": {
+            "get": {
+                "summary": "Export all users to Excel",
+                "tags": ["Users"],
+                "responses": {
+                    "200": {
+                        "description": "Excel file",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": { "type": "string", "format": "binary" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/import-users": {
+            "post": {
+                "summary": "Import users from file",
+                "tags": ["Users"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "file": { "type": "string", "format": "binary" }
+                                },
+                                "required": ["file"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Users imported successfully" }
+                }
+            }
+        },
+        "/login-firebase": {
+            "post": {
+                "summary": "Authenticate using Firebase credentials",
+                "tags": ["Authentication"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": { "type": "string", "format": "email" },
+                                    "password": { "type": "string" }
+                                },
+                                "required": ["email", "password"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": { "type": "string" },
+                                        "token": { "type": "string" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": { "description": "Invalid credentials" },
+                    "404": { "description": "User not found" }
+                }
+            }
+        },
+        "/user/{id}/apprenant": {
+            "put": {
+                "summary": "Update user role to 'Apprenant'",
+                "tags": ["Users"],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "role": { "type": "string", "enum": ["apprenant"] }
+                                },
+                                "required": ["role"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Role updated successfully" },
+                    "404": { "description": "User not found" }
+                }
+            }
+        },
+        "/referentiels": {
+            "get": {
+                "summary": "Liste tous les référentiels",
+                "description": "Retourne une liste de tous les référentiels disponibles.",
+                "responses": {
+                    "200": {
+                        "description": "Liste des référentiels récupérée avec succès.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Referentiel"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur serveur lors de la récupération des référentiels."
+                    }
+                }
+            },
+            "post": {
+                "summary": "Créer un référentiel",
+                "description": "Crée un nouveau référentiel.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Referentiel"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Référentiel créé avec succès.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Referentiel"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Mauvaise requête. Paramètres invalides."
+                    },
+                    "500": {
+                        "description": "Erreur serveur lors de la création du référentiel."
+                    }
+                }
+            }
+        },
+        "/referentiels/{id}": {
+            "get": {
+                "summary": "Récupérer un référentiel par ID",
+                "description": "Récupère un référentiel spécifique en utilisant son ID.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID du référentiel à récupérer.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails du référentiel récupérés avec succès.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Referentiel"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Référentiel non trouvé."
+                    },
+                    "500": {
+                        "description": "Erreur serveur lors de la récupération du référentiel."
+                    }
+                }
+            },
+            "put": {
+                "summary": "Mettre à jour un référentiel par ID",
+                "description": "Met à jour les informations d'un référentiel existant en utilisant son ID.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID du référentiel à mettre à jour.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Referentiel"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Référentiel mis à jour avec succès.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Referentiel"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Mauvaise requête. Paramètres invalides."
+                    },
+                    "404": {
+                        "description": "Référentiel non trouvé."
+                    },
+                    "500": {
+                        "description": "Erreur serveur lors de la mise à jour du référentiel."
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Supprimer un référentiel par ID",
+                "description": "Supprime un référentiel spécifique en utilisant son ID.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID du référentiel à supprimer.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Référentiel supprimé avec succès."
+                    },
+                    "404": {
+                        "description": "Référentiel non trouvé."
+                    },
+                    "500": {
+                        "description": "Erreur serveur lors de la suppression du référentiel."
+                    }
+                }
+            }
+        },
+        "/promotions": {
+            "post": {
+                "summary": "Create a new promotion",
+                "operationId": "createPromotion",
+                "tags": ["Promotion"],
+                "requestBody": {
+                    "description": "Promotion data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "libelle": { "type": "string" },
+                                    "date_debut": { "type": "string", "format": "date" },
+                                    "date_fin": { "type": "string", "format": "date" },
+                                    "duree": { "type": "integer" },
+                                    "etat": { "type": "string" },
+                                    "referentiel_id": { "type": "string" }
+                                },
+                                "required": ["libelle", "date_debut", "referentiel_id"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Promotion created successfully"
+                    },
+                    "400": {
+                        "description": "Bad request, validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/promotions/{id}/etat": {
+            "put": {
+                "summary": "Update the state of a promotion",
+                "operationId": "updatePromotionEtat",
+                "tags": ["Promotion"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string" }
+                    }
+                ],
+                "requestBody": {
+                    "description": "New promotion state",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "etat": { "type": "string" }
+                                },
+                                "required": ["etat"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "State updated successfully" },
+                    "400": { "description": "Invalid input" },
+                    "500": { "description": "Server error" }
+                }
+            }
+        },
+        "/promotions/active": {
+            "get": {
+                "summary": "Get active promotions",
+                "operationId": "getActivePromotions",
+                "tags": ["Promotion"],
+                "responses": {
+                    "200": { "description": "List of active promotions" },
+                    "404": { "description": "No active promotions found" }
+                }
+            }
+        },
+        "/promotions/{id}": {
+            "get": {
+                "summary": "Get promotion by ID",
+                "operationId": "getPromotionById",
+                "tags": ["Promotion"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Promotion details" },
+                    "404": { "description": "Promotion not found" }
+                }
+            },
+            "delete": {
+                "summary": "Delete a promotion by ID",
+                "operationId": "deletePromotion",
+                "tags": ["Promotion"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string" }
+                    }
+                ],
+                "responses": {
+                    "200": { "description": "Promotion deleted successfully" },
+                    "404": { "description": "Promotion not found" },
+                    "500": { "description": "Server error" }
+                }
+            }
+        },
+        "/promotions/{id}/update": {
+            "put": {
+                "summary": "Update promotion details",
+                "operationId": "updatePromotion",
+                "tags": ["Promotion"],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string" }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Updated promotion data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "libelle": { "type": "string" },
+                                    "date_debut": { "type": "string", "format": "date" },
+                                    "date_fin": { "type": "string", "format": "date" },
+                                    "duree": { "type": "integer" },
+                                    "etat": { "type": "string" },
+                                    "referentiel_id": { "type": "string" }
+                                },
+                                "required": ["libelle", "date_debut", "referentiel_id"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Promotion updated successfully" },
+                    "400": { "description": "Invalid input or promotion already exists" },
+                    "500": { "description": "Server error" }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string" },
+                    "nom": { "type": "string" },
+                    "prenom": { "type": "string" },
+                    "email": { "type": "string", "format": "email" },
+                    "password": { "type": "string" },
+                    "photo": { "type": "string", "format": "binary" },
+                    "telephone": { "type": "string" },
+                    "fonction": { "type": "string" },
+                    "statut": { "type": "string" }
+                },
+                "required": ["id", "nom", "prenom", "email", "telephone", "fonction", "statut"]
+            },
+            "Referentiel": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer" },
+                    "nom": { "type": "string" },
+                    "description": { "type": "string" }
+                },
+                "required": ["id", "nom"]
+            },
+            "Promotion": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string" },
+                    "libelle": { "type": "string" },
+                    "date_debut": { "type": "string", "format": "date" },
+                    "date_fin": { "type": "string", "format": "date" },
+                    "duree": { "type": "integer" },
+                    "etat": { "type": "string" },
+                    "referentiel_id": { "type": "string" }
+                },
+                "required": ["libelle", "date_debut", "referentiel_id"]
+            }
+        }
+    }
+}

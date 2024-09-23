@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FirebaseController;
 use App\Http\Controllers\UserFirebaseController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\ReferentielController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,8 +30,8 @@ Route::get('/users', [UserFirebaseController::class, 'getAllUsers']);
 Route::get('export-users', [UserFirebaseController::class, 'exportUsers']);
 Route::post('/import-users', [UserFirebaseController::class, 'importUsers']);
 Route::post('/login-firebase', [UserFirebaseController::class, 'authenticateWithCredentials']);
+Route::put('user/{id}/apprenant', [UserFirebaseController::class, 'updateUserRoleToApprenant']);
 
-use App\Http\Controllers\ReferentielController;
 
 // Routes pour le contrôleur ReferentielController
 Route::prefix('referentiels')->group(function () {

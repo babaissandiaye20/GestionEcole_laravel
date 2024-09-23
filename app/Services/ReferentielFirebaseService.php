@@ -46,24 +46,36 @@ class ReferentielFirebaseService implements ReferentielServiceInterface
       $user = null;
 
       if ($userId) {
-         try {
-              $user = UserFacade::read('users',$userId);
+          try {
+              $user = UserFacade::read('users', $userId);
 
+              if (!$user) {
+                  return [
+                      'success' => false,
+                      'error' => "L'utilisateur avec l'ID $userId n'existe pas."
+                  ];
+              }
 
-             if (!$user) {
-                 return [
-                     'success' => false,
-                     'error' => "L'utilisateur avec l'ID $userId n'a pas d'ID ou n'existe pas."
-                 ];
-             }
-         } catch (Exception $e) {
-             Log::error('Erreur lors de la récupération de l\'utilisateur : ' . $e->getMessage());
-             return [
-                 'success' => false,
-                 'error' => 'Erreur lors de la récupération de l\'utilisateur.'
-             ];
-         }
+              // Vérifier si l'utilisateur a le rôle "Apprenant"
+              if ($user['role'] !== 'apprenant') {
+                  return [
+                      'success' => false,
+                      'error' => "L'utilisateur doit avoir le rôle 'Apprenant' pour créer un référentiel."
+                  ];
+              }
 
+          } catch (Exception $e) {
+              Log::error('Erreur lors de la récupération de l\'utilisateur : ' . $e->getMessage());
+              return [
+                  'success' => false,
+                  'error' => 'Erreur lors de la récupération de l\'utilisateur.'
+              ];
+          }
+      } else {
+          return [
+              'success' => false,
+              'error' => "L'ID de l'utilisateur est requis."
+          ];
       }
 
       // Préparer les données du référentiel
@@ -75,7 +87,7 @@ class ReferentielFirebaseService implements ReferentielServiceInterface
           'statut' => $data['statut'] ?? 'Actif',
           'photo' => $photoUrl,
           'competences' => $this->formatCompetences($data['competences'] ?? []),
-          'user_id' => $user   // Associer l'utilisateur si trouvé
+          'user_id' =>$user  // Associer l'utilisateur trouvé avec l'ID
       ];
 
       // Créer le référentiel
@@ -146,4 +158,61 @@ class ReferentielFirebaseService implements ReferentielServiceInterface
             ];
         }, $modules);
     }
+public function addUserToReferentiel(int $referentielId, int $userId)
+{
+    // Vérifier si le référentiel existe
+    $referentiel = $this->referentielRepository->findById($referentielId);
+
+    if (!$referentiel) {
+        return [
+            'success' => false,
+            'error' => "Le référentiel avec l'ID $referentielId n'existe pas."
+        ];
+    }
+
+    // Récupérer l'utilisateur par ID
+    try {
+        $user = UserFacade::read('users', $userId);
+
+        if (!$user) {
+            return [
+                'success' => false,
+                'error' => "L'utilisateur avec l'ID $userId n'existe pas."
+            ];
+        }
+
+        // Vérifier si l'utilisateur a le rôle "Apprenant"
+        if ($user->role !== 'Apprenant') {
+            return [
+                'success' => false,
+                'error' => "L'utilisateur doit avoir le rôle 'Apprenant' pour être ajouté à un référentiel."
+            ];
+        }
+
+    } catch (Exception $e) {
+        Log::error('Erreur lors de la récupération de l\'utilisateur : ' . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => 'Erreur lors de la récupération de l\'utilisateur.'
+        ];
+    }
+
+    // Associer l'utilisateur au référentiel
+    $success = $this->referentielRepository->addUserToReferentiel($referentielId, $userId);
+
+    if (!$success) {
+        return [
+            'success' => false,
+            'error' => 'Erreur lors de l\'association de l\'utilisateur au référentiel.'
+        ];
+    }
+
+    return [
+        'success' => true,
+        'message' => "L'utilisateur a été ajouté avec succès au référentiel."
+    ];
+}
+
+
+
 }

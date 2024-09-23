@@ -107,4 +107,27 @@ try {
             return response()->json(['error' => 'Erreur lors de la suppression du référentiel'], 500);
         }
     }
+public function addUsersToReferentiel(Request $request, $referentielId)
+{
+    $validatedData = $request->validate([
+        'users' => 'required|array',
+        'users.*.id' => 'required|string', // ID des utilisateurs
+    ]);
+
+    try {
+        // Appel au service pour ajouter les utilisateurs au référentiel
+        $result = $this->referentielService->addUsersToReferentiel($referentielId, $validatedData['users']);
+
+        // Vérification du résultat
+        if ($result['success']) {
+            return response()->json(['message' => 'Tous les utilisateurs ont été ajoutés avec succès'], 200);
+        } else {
+            return response()->json(['error' => 'Erreur lors de l\'ajout des utilisateurs', 'invalid_users' => $result['invalid_users']], 400);
+        }
+    } catch (\Exception $e) {
+        Log::error('Erreur lors de l\'ajout des utilisateurs au référentiel : ' . $e->getMessage());
+        return response()->json(['error' => 'Erreur serveur'], 500);
+    }
+}
+
 }

@@ -15,7 +15,9 @@ use Illuminate\Http\Request;
 use App\Exports\UsersExport;
 use App\Imports\UsersImport;
 use Maatwebsite\Excel\Facades\Excel;
-
+use Dompdf\Dompdf;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Facades\Storage;
 class UserFirebaseController extends Controller
 {
     protected $userService;
@@ -160,4 +162,70 @@ public function importUsers(Request $request)
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
     }
+public function updateUserRoleToApprenant(Request $request, $id)
+{
+    // Valider uniquement l'entrée du rôle
+    $validatedData = $request->validate([
+        'role' => 'required|string|in:apprenant',
+    ]);
+
+    // Récupérer l'utilisateur par son ID
+    $user = $this->userService->getUserById($id);
+
+    // Vérifier si l'utilisateur existe
+    if (!$user) {
+        return response()->json([
+            'message' => "L'utilisateur avec l'ID {$id} n'existe pas."
+        ], 404);
+    }
+
+    // Mettre à jour le rôle de l'utilisateur
+    $updatedData = ['role' => 'apprenant'];
+    $this->userService->updateUser($id, $updatedData);
+
+    // Générer un fichier PDF avec un QR code contenant les informations de l'utilisateur
+    $pdfPath = $this->generateUserPdfWithQrCode($user);
+
+    return response()->json([
+        'message' => "Le rôle de l'utilisateur a été mis à jour en apprenant.",
+        'user' => $user,
+        'pdf_path' => $pdfPath
+    ], 200);
+}
+protected function generateUserPdfWithQrCode($user)
+{
+    // Générer les informations à inclure dans le QR code
+    $qrData = "Nom: {$user['nom']}, Prénom: {$user['prenom']}, Email: {$user['email']}, Téléphone: {$user['telephone']}";
+
+    // Générer le QR code en tant qu'image base64
+    $qrCode = base64_encode(QrCode::format('png')->size(200)->generate($qrData));
+
+    // Créer un objet DOMPDF pour générer le fichier PDF
+    $dompdf = new Dompdf();
+    $html = "
+        <h1>Informations de l'utilisateur</h1>
+        <p>Nom: {$user['nom']}</p>
+        <p>Prénom: {$user['prenom']}</p>
+        <p>Email: {$user['email']}</p>
+        <p>Téléphone: {$user['telephone']}</p>
+        <p>Rôle: Apprenant</p>
+        <img src='data:image/png;base64,{$qrCode}' alt='QR Code' />
+    ";
+
+    // Charger le HTML dans DOMPDF
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+
+    // Sauvegarder le fichier PDF dans le stockage Laravel
+    $fileName = 'user_' . $user['email'] . '_details.pdf';
+    $filePath = 'pdfs/' . $fileName;
+
+    // Utiliser le système de stockage Laravel pour sauvegarder le PDF
+    Storage::put($filePath, $dompdf->output());
+
+    return Storage::url($filePath); // Retourner le chemin d'accès au fichier PDF
+}
+
+
 }
