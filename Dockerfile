@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
+    libzip-dev \
     curl \
     git \
     unzip \
@@ -20,6 +21,7 @@ RUN apt-get update && apt-get install -y \
 
 # Installation des extensions PHP requises
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install zip
 
 # Définition du répertoire de travail
 WORKDIR /var/www/html
