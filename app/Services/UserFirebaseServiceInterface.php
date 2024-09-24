@@ -4,7 +4,7 @@ namespace App\Services;
 
 interface UserFirebaseServiceInterface
 {
-    public function createUser(array $data);
+    public function createUser(array $data,$currentRole);
 
     public function getUserById(string $id);
 
@@ -14,5 +14,5 @@ interface UserFirebaseServiceInterface
 
     public function findUserByField(string $field, string $value);
 
-    public function getAllUsers();
+    public function getAllUsers($role);
 }

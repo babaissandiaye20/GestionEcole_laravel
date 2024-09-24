@@ -32,11 +32,22 @@ class UserFirebaseRepository implements UserFirebaseRepositoryInterface
         return UserFacade::find($this->collection,$field, $value);
     }
 
-    public function getAllUsers()
+    // UserFirebaseRepository.php
+    public function getAllUsers($role = null)
     {
-        return UserFacade::findAll($this->collection);
+        $users = UserFacade::findAll($this->collection);
 
+        if ($role) {
+            // Filtrer les utilisateurs par rôle
+            $filteredUsers = array_filter($users, function($user) use ($role) {
+                return isset($user['role']) && $user['role'] === $role;
+            });
+            return $filteredUsers;
+        }
+
+        return $users;
     }
+
 public function createUserWithEmailAndPassword($email, $password)
 {
     return FirebaseFacade::createUserWithEmailAndPassword($email, $password);

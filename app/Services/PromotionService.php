@@ -58,6 +58,7 @@ class PromotionService implements PromotionServiceInterface
                 'duree' => $data['duree'],
                 'etat' => $data['etat'],
                 'photo' => $data['photo'] ?? null,
+
             ];
 
             // Créer la promotion dans la base de données

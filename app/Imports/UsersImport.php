@@ -24,7 +24,7 @@ class UsersImport implements ToCollection
                 'password' => $row[3],
                 'telephone' => $row[4],
                 'fonction' => $row[5],
-                'statut' => $row[6],
+                'role' => $row[6],
             ];
 
             if (!$data['email']) {

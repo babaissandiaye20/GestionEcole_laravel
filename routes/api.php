@@ -38,8 +38,10 @@ Route::prefix('referentiels')->group(function () {
     Route::post('/', [ReferentielController::class, 'store']);// Créer un référentiel
      Route::get('/', [ReferentielController::class, 'index']);
     Route::get('/{id}', [ReferentielController::class, 'show']); // Afficher un référentiel par ID
-    Route::put('/{id}', [ReferentielController::class, 'update']); // Mettre à jour un référentiel par ID
+    Route::patch('/{id}', [ReferentielController::class, 'update']); // Mettre à jour un référentiel par ID
     Route::delete('/{id}', [ReferentielController::class, 'destroy']); // Supprimer un référentiel par ID
+    Route::post('/{id}/user', [ReferentielController::class, 'addUserToReferentiel']);
+
 });
 
 

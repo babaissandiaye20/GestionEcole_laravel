@@ -42,7 +42,7 @@ class ModelsProvider extends ServiceProvider
                 $this->app->bind(UserFirebaseServiceInterface::class, UserFirebaseService::class);
 
                 $this->app->singleton(\Kreait\Firebase\Auth::class, function ($app) {
-                            $firebaseConfig = config('firebase.credentials_file');
+                         $firebaseConfig = '/var/www/html/config/firebase_credentials.json';
                             $projectId = config('firebase.project_id');
 
                             $firebase = (new Factory)

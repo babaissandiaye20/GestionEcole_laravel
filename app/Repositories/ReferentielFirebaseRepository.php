@@ -22,9 +22,14 @@ class ReferentielFirebaseRepository implements ReferentielRepositoryInterface
         return ReferentielFacade::update($this->collection,$id, $data);
     }
 
-    public function delete(string $id)
+    /*public function delete(string $id)
     {
         return ReferentielFacade::delete($this->collection,$id);
+    }*/
+    public function delete(string $id)
+    {
+        // Mettre à jour le champ `deleted_at` avec la date et l'heure actuelles
+        return $this->update($id, ['deleted_at' => now()]);
     }
 
     public function find(string $field, string $value)

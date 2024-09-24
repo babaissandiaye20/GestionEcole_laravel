@@ -40,8 +40,9 @@ class UserFirebaseController extends Controller
            'password' => 'required|string|min:6',
            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',// Ajout de la validation de la photo
            'telephone'=>'required|string',
-           'fonction'=>'required|string',
-           "statut"=>'required|string',
+           'role' => 'required|string',
+           'fonction'=>'nullable|string',
+
        ]);
 
        // Gestion de la photo uploadée
@@ -50,7 +51,7 @@ class UserFirebaseController extends Controller
        }
 
        // Transmission des données au service pour créer l'utilisateur
-       $user = $this->userService->createUser($validatedData);
+       $user = $this->userService->createUser($validatedData,$validatedData['role']);
        return response()->json($user, 201);
    }
 
@@ -60,12 +61,25 @@ class UserFirebaseController extends Controller
         return response()->json($user);
     }
 
-    public function updateUser(Request $request, $id)
-    {
-        $data = $request->all();
-        $user = $this->userService->updateUser($id, $data);
-        return response()->json($user);
-    }
+   public function updateUser(Request $request, $id)
+   {
+       $data = $request->all();
+
+       // Valider les champs modifiables
+       $validatedData = $request->validate([
+           'nom' => 'nullable|string',
+           'prenom' => 'nullable|string',
+           'email' => 'nullable|email',
+           'telephone' => 'nullable|string',
+           'fonction' => 'nullable|string',
+           'statut' => 'nullable|string',
+       ]);
+
+       // Mise à jour des informations de l'utilisateur
+       $user = $this->userService->updateUser($id, $validatedData);
+       return response()->json($user);
+   }
+
 
     public function deleteUser($id)
     {
@@ -81,13 +95,16 @@ class UserFirebaseController extends Controller
         return response()->json($user);
     }
 
-    public function getAllUsers()
-    {
-        $users = $this->userService->getAllUsers();
-         //dd($users);
-        return response()->json($users);
+ public function getAllUsers(Request $request)
+ {
+     $role = $request->query('role'); // Récupérer le rôle depuis les paramètres de requête
+     $users = $this->userService->getAllUsers($role);
 
-    }
+     return response()->json($users);
+ }
+
+
+
 public function exportUsers()
 {
     return Excel::download(new UsersExport, 'users.xlsx');

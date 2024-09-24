@@ -28,6 +28,7 @@ class ReferentielController extends Controller
         ]);
 
         try {
+        //dd($validatedData);
             $referentiel = $this->referentielService->createReferentiel($validatedData);
             return response()->json($referentiel, 201); // Retourne le référentiel créé
         } catch (\Exception $e) {
@@ -51,7 +52,7 @@ class ReferentielController extends Controller
             return response()->json(['error' => 'Erreur lors de la récupération du référentiel'], 500);
         }
     }
-public function index(){
+/*public function index(){
 try {
             $referentiel = $this->referentielService-> getAllReferentiels();
 
@@ -61,7 +62,20 @@ try {
             Log::error('Erreur lors de la récupération du référentiel : ' . $e->getMessage());
             return response()->json(['error' => 'Erreur lors de la récupération du référentiel'], 500);
         }
+    }*/
+    public function index(Request $request)
+    {
+        $filters = $request->only(['competence', 'module']); // Filtres par compétence et module
+
+        try {
+            $referentiels = $this->referentielService->getFilteredReferentiels($filters);
+            return response()->json($referentiels);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des référentiels : ' . $e->getMessage());
+            return response()->json(['error' => 'Erreur lors de la récupération des référentiels'], 500);
+        }
     }
+
 /*public function index(Request $request)
 {
     $filters = $request->only(['libelle', 'module']);
@@ -76,25 +90,6 @@ try {
 }*/
 
     // Méthode pour mettre à jour un référentiel
-    public function update(Request $request, $id)
-    {
-        $validatedData = $request->validate([
-            'code' => 'nullable|string|max:255',
-            'libelle' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'photo' => 'nullable|image|max:1024',
-            'competences' => 'nullable|array',
-            'user_id'=>'nullable|string',
-        ]);
-
-        try {
-            $referentiel = $this->referentielService->updateReferentiel($id, $validatedData);
-            return response()->json($referentiel);
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de la mise à jour du référentiel : ' . $e->getMessage());
-            return response()->json(['error' => 'Erreur lors de la mise à jour du référentiel'], 500);
-        }
-    }
 
     // Méthode pour supprimer un référentiel
     public function destroy($id)
@@ -129,5 +124,57 @@ public function addUsersToReferentiel(Request $request, $referentielId)
         return response()->json(['error' => 'Erreur serveur'], 500);
     }
 }
+public function update(Request $request, $id)
+{
+    $validatedData = $request->validate([
+        'code' => 'nullable|string|max:255',
+        'libelle' => 'nullable|string|max:255',
+        'description' => 'nullable|string',
+        'photo' => 'nullable|image|max:1024',
+        'competences' => 'nullable|array',
+        'competences.*.id' => 'sometimes|exists:competences,id', // Validation pour les ID existants des compétences
+        'competences.*.nom' => 'required|string|max:255',  // Validation pour chaque compétence
+        'competences.*.description' => 'nullable|string',
+        'competences.*.duree_acquisition' => 'nullable|integer',
+        'competences.*.type' => 'nullable|string',
+        'user_id' => 'nullable|string',
+    ]);
+
+    try {
+        $referentiel = $this->referentielService->updateReferentiel($id, $validatedData);
+        return response()->json($referentiel);
+          Log::info('success');
+    } catch (\Exception $e) {
+        Log::error('Erreur lors de la mise à jour du référentiel : ' . $e->getMessage());
+        return response()->json(['error' => 'Erreur lors de la mise à jour du référentiel'], 500);
+    }
+}
+public function addUserToReferentiel(Request $request,  string $referentielId)
+{
+    // Valider les paramètres de la requête
+    $validated = $request->validate([
+        'user_id' => 'required|string',
+    ]);
+
+    $userId = $validated['user_id'];
+
+    // Appeler le service pour ajouter l'utilisateur au référentiel
+    $result = $this->referentielService->addUserToReferentiel($referentielId, $userId);
+
+    // Vérifier le résultat et retourner une réponse appropriée
+    if (!$result['success']) {
+        return response()->json([
+            'success' => false,
+            'message' => $result['error']
+        ], 400); // Code 400 pour les erreurs
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => $result['message']
+    ], 200); // Code 200 pour succès
+}
+
+
 
 }

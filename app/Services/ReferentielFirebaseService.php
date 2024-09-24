@@ -6,6 +6,7 @@ use App\Repositories\ReferentielRepositoryInterface;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use App\Facades\UserFacade;
+
 class ReferentielFirebaseService implements ReferentielServiceInterface
 {
     protected $referentielRepository;
@@ -71,12 +72,12 @@ class ReferentielFirebaseService implements ReferentielServiceInterface
                   'error' => 'Erreur lors de la récupération de l\'utilisateur.'
               ];
           }
-      } else {
+      } /*else {
           return [
               'success' => false,
               'error' => "L'ID de l'utilisateur est requis."
           ];
-      }
+      }*/
 
       // Préparer les données du référentiel
       $referentielData = [
@@ -100,25 +101,6 @@ class ReferentielFirebaseService implements ReferentielServiceInterface
         return $this->referentielRepository->read($id);
     }
 
-    public function updateReferentiel(string $id, array $data)
-    {
-     dd($request->all());
-        // Gestion du statut uniquement si présent dans les données
-        if (isset($data['statut'])) {
-            $data['statut'] = $data['statut'] === 'Actif' ? 'Actif' : 'Inactif';
-        } else {
-            unset($data['statut']); // Retirer le champ si non fourni
-        }
-
-        // Mise à jour du référentiel avec les données fournies
-        try {
-
-            return $this->referentielRepository->update($id, $data);
-        } catch (Exception $e) {
-            Log::error('Erreur lors de la mise à jour du référentiel avec ID ' . $id . ' : ' . $e->getMessage());
-            throw new \RuntimeException('Erreur lors de la mise à jour du référentiel');
-        }
-    }
 
 
     public function deleteReferentiel(string $id)
@@ -158,10 +140,10 @@ class ReferentielFirebaseService implements ReferentielServiceInterface
             ];
         }, $modules);
     }
-public function addUserToReferentiel(int $referentielId, int $userId)
+public function addUserToReferentiel($string $referentielId, $string $userId)
 {
     // Vérifier si le référentiel existe
-    $referentiel = $this->referentielRepository->findById($referentielId);
+    $referentiel = $this->referentielRepository->findz($referentielId);
 
     if (!$referentiel) {
         return [
@@ -211,6 +193,88 @@ public function addUserToReferentiel(int $referentielId, int $userId)
         'success' => true,
         'message' => "L'utilisateur a été ajouté avec succès au référentiel."
     ];
+}
+public function getFilteredReferentiels(array $filters)
+{
+    $referentiels = $this->referentielRepository->findAll();
+
+    if (isset($filters['competence'])) {
+        $referentiels = array_filter($referentiels, function ($referentiel) use ($filters) {
+            foreach ($referentiel['competences'] as $competence) {
+                if (stripos($competence['nom'], $filters['competence']) !== false) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    if (isset($filters['module'])) {
+        $referentiels = array_filter($referentiels, function ($referentiel) use ($filters) {
+            foreach ($referentiel['competences'] as $competence) {
+                foreach ($competence['modules'] as $module) {
+                    if (stripos($module['nom'], $filters['module']) !== false) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+    }
+
+    return array_values($referentiels); // Retourner le tableau filtré
+}
+
+public function updateReferentiel(string $id, array $data)
+{
+    // Vérifier si le référentiel existe
+    $referentiel = $this->referentielRepository->read($id);
+
+    if (!$referentiel) {
+        throw new \Exception("Le référentiel avec l'ID $id n'existe pas.");
+    }
+
+    // Traitement des compétences s'il y en a
+    if (isset($data['competences'])) {
+        $data['competences'] = $this->updateCompetence($referentiel['competences'], $data['competences']);
+    }
+
+    // Gestion du statut uniquement si présent dans les données
+    if (isset($data['statut'])) {
+        $data['statut'] = $data['statut'] === 'Actif' ? 'Actif' : 'Inactif';
+    } else {
+        unset($data['statut']);
+    }
+
+    // Mise à jour du référentiel avec les données fournies
+    try {
+        return $this->referentielRepository->update($id, $data);
+    } catch (Exception $e) {
+        Log::error('Erreur lors de la mise à jour du référentiel avec ID ' . $id . ' : ' . $e->getMessage());
+        throw new \RuntimeException('Erreur lors de la mise à jour du référentiel');
+    }
+}
+
+protected function updateCompetence(array $existingCompetences, array $newCompetences)
+{
+    foreach ($newCompetences as $newCompetence) {
+        $competenceExists = false;
+
+        // Vérifier si la compétence existe déjà dans le référentiel
+        foreach ($existingCompetences as $existingCompetence) {
+            if ($existingCompetence['nom'] === $newCompetence['nom']) {
+                $competenceExists = true;
+                break;
+            }
+        }
+
+        // Si la compétence n'existe pas, l'ajouter
+        if (!$competenceExists) {
+            $existingCompetences[] = $newCompetence;
+        }
+    }
+
+    return $existingCompetences;
 }
 
 

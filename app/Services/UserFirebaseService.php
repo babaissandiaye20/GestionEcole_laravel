@@ -13,25 +13,31 @@ class UserFirebaseService implements UserFirebaseServiceInterface
         $this->userRepository = $userRepository;
     }
 
-   public function createUser(array $data)
+   public function createUser(array $data, $currentRole)
    {
-       // Créez l'utilisateur dans Firebase Authentication avec email et mot de passe
-       $firebaseUserId = $this->userRepository->createUserWithEmailAndPassword($data['email'], $data['password']);
+       $validRoles = [];
 
-       // Si une photo est envoyée, uploadez-la dans Firebase Storage
-       if (isset($data['photo'])) {
-           $filePath = $data['photo']->getPathname();
-           $fileName = time() . '_' . $data['photo']->getClientOriginalName(); // Génère un nom unique
-
-           // Utilisez la méthode uploadPhoto pour stocker l'image dans Firebase Storage
-           $photoUrl = $this->userRepository->uploadPhoto($filePath, $fileName);
-           $data['photo'] = $photoUrl; // Ajoutez l'URL de la photo aux données utilisateur
+       // Vérifier les rôles autorisés pour l'utilisateur en cours
+       if ($currentRole === 'Admin') {
+           $validRoles = ['Admin', 'Coach', 'Manager', 'CM', 'apprenant'];
+       } elseif ($currentRole === 'Manager') {
+           $validRoles = ['Coach', 'Manager', 'CM', 'apprenant'];
+       } else {
+           throw new \Exception('Non autorisé à créer cet utilisateur.');
        }
 
-       // Créez l'utilisateur dans la base de données Firebase avec ses informations
-       $data['firebaseUserId'] = $firebaseUserId; // Ajoutez l'ID Firebase de l'utilisateur
+       // Vérifier si le rôle est valide
+       if (!in_array($data['role'], $validRoles)) {
+           throw new \Exception('Le rôle fourni est invalide.');
+       }
+
+       // Créer l'utilisateur dans Firebase et la base de données
+       $firebaseUserId = $this->userRepository->createUserWithEmailAndPassword($data['email'], $data['password']);
+       $data['firebaseUserId'] = $firebaseUserId;
+
        return $this->userRepository->createUser($data);
    }
+
 
 
     public function getUserById(string $id)
@@ -54,8 +60,8 @@ class UserFirebaseService implements UserFirebaseServiceInterface
         return $this->userRepository->findUserByField($field, $value);
     }
 
-    public function getAllUsers()
+    public function getAllUsers($role)
     {
-        return $this->userRepository->getAllUsers();
+        return $this->userRepository->getAllUsers($role);
     }
 }
