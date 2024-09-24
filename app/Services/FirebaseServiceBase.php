@@ -15,7 +15,7 @@ class FirebaseServiceBase implements FirebaseServiceBaseInterface
     public function __construct()
     {
         $firebase = (new Factory)
-            ->withServiceAccount('/home/babaissa/Bureau/GestionEcoleBis3/config/firebase_credentials.json')
+            ->withServiceAccount('/var/www/html/config/firebase_credentials.json')
             ->withDatabaseUri('https://gesecole-1137a-default-rtdb.firebaseio.com/');
 
         $this->database = $firebase->createDatabase();
