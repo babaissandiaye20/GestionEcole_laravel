@@ -1,6 +1,7 @@
 # Utilise l'image officielle PHP avec FPM (FastCGI Process Manager)
 FROM php:8.1.2-fpm
 
+
 # Installation des dépendances système
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -36,10 +37,6 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # Set the correct permissions for the storage directory
 RUN chown -R www-data:www-data /var/www/html/storage
 RUN chmod -R 775 /var/www/html/storage
-# Ajoutez cette ligne dans le Dockerfile après l'installation des dépendances système
-RUN curl -L "https://github.com/docker/compose/releases/download/v2.0.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
-    && chmod +x /usr/local/bin/docker-compose
-
 
 # Générer les clés Laravel
 RUN php artisan key:generate
