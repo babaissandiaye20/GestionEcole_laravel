@@ -60,7 +60,7 @@ RUN php artisan config:cache \
     && php artisan view:cache
 
 # Expose the port used by PHP-FPM
-EXPOSE 9000
+EXPOSE 9001
 
 # Command to start PHP-FPM when the container starts
 CMD ["php-fpm"]
