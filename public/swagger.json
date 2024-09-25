@@ -7,8 +7,8 @@
     },
     "servers": [
         {
-            "url": "https://gestion-pedagogique-laravel.onrender.com/index.html",
-            "description": "Serveur local"
+            "url": "https://gestion-pedagogique-laravel.onrender.com",
+            "description": "Serveur de production"
         }
     ],
     "paths": {
