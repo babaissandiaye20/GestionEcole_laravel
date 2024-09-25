@@ -5,7 +5,12 @@
         "description": "API pour la gestion des utilisateurs.",
         "version": "1.0.0"
     },
-
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Serveur local"
+        }
+    ],
     "paths": {
         "/users": {
             "post": {
