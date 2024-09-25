@@ -20,8 +20,7 @@ RUN apt-get update && apt-get install -y \
     supervisor
 
 # Install required PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
-RUN docker-php-ext-install zip
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -29,29 +28,33 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set the working directory
 WORKDIR /var/www/html
 
-# Copy the Laravel project files into the container
-COPY . /var/www/html/
-# Ensure .env file is copied
-COPY .env /var/www/html/.env
+# Copy composer files first to leverage Docker cache
+COPY composer.json composer.lock ./
 
 # Install project dependencies
-RUN composer install --no-interaction --no-plugins --no-scripts
+RUN composer install --no-autoloader --no-scripts --no-interaction
+
+# Copy the rest of the application code
+COPY . .
+
+# Generate the autoloader
+RUN composer dump-autoload
+
+# Ensure .env file is copied (if it doesn't exist, copy .env.example)
+COPY .env* .env
 
 # Copy swagger.json file into the container
-COPY ./public/swagger.json /var/www/html/public/swagger.json
+COPY ./public/swagger.json ./public/swagger.json
 
-# Set permissions for storage, cache, and swagger.json
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/swagger.json \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod 644 /var/www/html/public/swagger.json
-
-# Set permissions for the .env file
-RUN chmod 644 .env
+# Set permissions for storage, cache, swagger.json, and .env
+RUN chown -R www-data:www-data storage bootstrap/cache public/swagger.json .env \
+    && chmod -R 775 storage bootstrap/cache \
+    && chmod 644 public/swagger.json .env
 
 # Generate Laravel application key
-RUN php artisan key:generate
+RUN php artisan key:generate --force
 
-# Configure cache and run migrations during the build
+# Configure cache
 RUN php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
