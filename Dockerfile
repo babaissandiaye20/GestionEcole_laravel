@@ -1,7 +1,7 @@
-# Use the official PHP image with FPM (FastCGI Process Manager)
-FROM php:8.1.2-fpm
+# Utiliser l'image PHP officielle avec extensions
+FROM php:8.1-fpm
 
-# Install system dependencies
+# Installer des dépendances
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpng-dev \
@@ -10,57 +10,44 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    libzip-dev \
     curl \
-    git \
     unzip \
+    git \
     libpq-dev \
-    vim \
-    cron \
-    supervisor
+    libzip-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip gd mbstring exif pcntl bcmath
 
-# Install required PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
+# Installer Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Définir le répertoire de travail
+WORKDIR /var/www
 
-# Set the working directory
-WORKDIR /var/www/html
-
-# Copy composer files first to leverage Docker cache
-COPY composer.json composer.lock ./
-
-# Install project dependencies
-RUN composer install --no-autoloader --no-scripts --no-interaction
-
-# Copy the rest of the application code
+# Copier les fichiers du projet dans le conteneur
 COPY . .
 
-# Generate the autoloader
-RUN composer dump-autoload
+# Configurer les permissions sur le répertoire de travail
+RUN chown -R www-data:www-data /var/www
 
-# Ensure .env file is copied (if it doesn't exist, copy .env.example)
-COPY .env* .env
+# Installer les dépendances du projet
+RUN composer install
 
-# Copy swagger.json file into the container
-COPY ./public/swagger.json ./public/swagger.json
+# Copier le fichier d'environnement et générer la clé
+COPY .env.example .env
+RUN php artisan key:generate
 
-# Set permissions for storage, cache, swagger.json, and .env
-RUN chown -R www-data:www-data storage bootstrap/cache public/swagger.json .env \
-    && chmod -R 775 storage bootstrap/cache \
-    && chmod 644 public/swagger.json .env
+# Configurer les permissions sur le stockage et le cache
+RUN chown -R www-data:www-data /var/www/storage \
+    && chmod -R 775 /var/www/storage \
+    && chmod -R 775 /var/www/bootstrap/cache
 
-# Generate Laravel application key
-RUN php artisan key:generate --force
 
-# Configure cache
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
 
-# Expose the port used by PHP-FPM
-EXPOSE 9000
+# Exposer le port
+EXPOSE $PORT
+# Copie le script de démarrage
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
-# Command to start PHP-FPM when the container starts
-CMD ["php-fpm"]
+# Commande pour démarrer l'application
+CMD php artisan serve --host=0.0.0.0 --port=$PORT

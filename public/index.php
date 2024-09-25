@@ -16,7 +16,7 @@ define('LARAVEL_START', microtime(true));
 |
 */
 
-if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
+if (file_exists($maintenance = _DIR_.'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
@@ -31,7 +31,7 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 |
 */
 
-require __DIR__.'/../vendor/autoload.php';
+require _DIR_.'/../vendor/autoload.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -44,12 +44,26 @@ require __DIR__.'/../vendor/autoload.php';
 |
 */
 
-$app = require_once __DIR__.'/../bootstrap/app.php';
+
+$app = require_once _DIR_.'/../bootstrap/app.php';
 
 $kernel = $app->make(Kernel::class);
+
+// Ajout pour forcer l'écoute sur le port défini
+$port = env('PORT', 8080);
+$app->bind('Illuminate\Http\Request', function () use ($port) {
+    return Request::capture()->server->set('SERVER_PORT', $port);
+});
 
 $response = $kernel->handle(
     $request = Request::capture()
 )->send();
 
 $kernel->terminate($request, $response);
+
+// Démarrer le serveur intégré de PHP sur le port spécifié
+if (php_sapi_name() === 'cli-server') {
+    $app->run();
+} else {
+    $app->run($app['request']);
+}
