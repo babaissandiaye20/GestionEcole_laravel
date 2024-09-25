@@ -31,6 +31,8 @@ WORKDIR /var/www/html
 
 # Copy the Laravel project files into the container
 COPY . /var/www/html/
+# Ensure .env file is copied
+COPY .env /var/www/html/.env
 
 # Install project dependencies
 RUN composer install --no-interaction --no-plugins --no-scripts
@@ -42,6 +44,9 @@ COPY ./public/swagger.json /var/www/html/public/swagger.json
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/swagger.json \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod 644 /var/www/html/public/swagger.json
+
+# Set permissions for the .env file
+RUN chmod 644 .env
 
 # Generate Laravel application key
 RUN php artisan key:generate
