@@ -29,7 +29,7 @@ WORKDIR /var/www/html
 
 # Copier le contenu du projet Laravel dans le conteneur
 COPY . /var/www/html/
-
+COPY ./public/swagger.json /var/www/html/public/swagger.json
 # Attribution des permissions au dossier de stockage et au cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && \
     chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
