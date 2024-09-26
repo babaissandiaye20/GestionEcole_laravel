@@ -44,7 +44,7 @@ services:
             POSTGRES_USER: baba
             POSTGRES_PASSWORD: Sidy2002
         ports:
-            - "5433:5432"
+            - "5434:5432"
         networks:
             - laravel_network
         volumes:

@@ -38,16 +38,19 @@ class PromotionRepositories implements PromotionRepositoryInterface
         }
     }
 
-    public function getActifPromotion()
-    {
-        $promotions = $this->getAllPromotions();
-        foreach ($promotions as $promotion) {
-            if ($promotion['etat'] === 'Actif') {
-                return $promotion;
+public function getActifPromotion()
+{
+    $promotions = $this->getAllPromotions();
+    foreach ($promotions as $promotion) {
+        if ($promotion['etat'] === 'Actif') {
+            if (!isset($promotion['referentiels'])) {
+                $promotion['referentiels'] = []; // ou une autre valeur par défaut
             }
+            return $promotion;
         }
-        return null;
     }
+    return null;
+}
  public function findPromotionbyid(string $field, string $value){
  return PromotionFacade::find($this->collection,$field, $value);
  }

@@ -168,20 +168,25 @@ class PromotionService implements PromotionServiceInterface
         return $formattedApprenants;
     }
 
-    public function getActivePromotion()
-    {
-        try {
-            $promotion = $this->promotionRepository->getActifPromotion();
-            if ($promotion) {
-                $promotion['referentiels'] = $this->formatReferentiels($promotion['referentiels']);
-                return response()->json($promotion, 200);
-            } else {
-                return response()->json(['message' => 'Aucune promotion actuelle.'], 404);
-            }
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
+  public function getActivePromotion()
+  {
+      try {
+          $promotion = $this->promotionRepository->getActifPromotion();
+          if ($promotion) {
+              if (isset($promotion['referentiels'])) {
+                  $promotion['referentiels'] = $this->formatReferentiels($promotion['referentiels']);
+              } else {
+                  $promotion['referentiels'] = []; // ou une autre valeur par défaut
+              }
+              return response()->json($promotion, 200);
+          } else {
+              return response()->json(['message' => 'Aucune promotion actuelle.'], 404);
+          }
+      } catch (Exception $e) {
+          return response()->json(['error' => $e->getMessage()], 500);
+      }
+  }
+
 public function findPromotionbyid(string $field, string $value){
  return $this->promotionRepository->findPromotionbyid($field, $value);
  }
